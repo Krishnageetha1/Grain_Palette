@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GrainPalette - Rice Type Classification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .upload-area {
+            border: 3px dashed #ccc;
+            padding: 50px;
+            text-align: center;
+            margin: 30px 0;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+            transform: translateY(-2px);
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .upload-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+        .predict-btn {
+            background: linear-gradient(45deg, #11998e, #38ef7d);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 20px;
+            display: none;
+            transition: all 0.3s ease;
+        }
+        .predict-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(17, 153, 142, 0.3);
+        }
+        .results {
+            margin-top: 40px;
+            display: none;
+        }
+        .main-result {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .main-result h2 {
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        .confidence {
+            font-size: 1.3em;
+            opacity: 0.9;
+        }
+        .result-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+        .result-section h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 1.3em;
+        }
+        .result-section p {
+            margin: 0;
+            color: #555;
+            line-height: 1.6;
+            font-size: 1.05em;
+        }
+        .image-preview {
+            max-width: 350px;
+            margin: 20px auto;
+            display: none;
+        }
+        .image-preview img {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .loading {
+            text-align: center;
+            display: none;
+            margin: 30px 0;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        .alternatives {
+            background: #e8f4fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .alternatives h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        .alt-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .alt-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌾 GrainPalette</h1>
+        <p class="subtitle">A Deep Learning Odyssey In Rice Type Classification Through Transfer Learning</p>
+        
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <p style="font-size: 1.2em; margin-bottom: 20px;">Upload Rice Grain Image</p>
+            <p style="color: #666; margin-bottom: 20px;">Drag & drop or click to select</p>
+            <input type="file" id="fileInput" accept="image/*">
+            <button type="button" class="upload-btn">📁 Choose Image</button>
+        </div>
+        
+        <div class="image-preview" id="imagePreview">
+            <img id="previewImg" src="/placeholder.svg" alt="Preview">
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="predict-btn" id="predictBtn" onclick="classifyRice()">🔍 Analyze Rice Type</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="font-size: 1.1em;">Analyzing grain features...</p>
+        </div>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                    document.getElementById('predictBtn').style.display = 'inline-block';
+                    document.getElementById('results').style.display = 'none';
+                    document.getElementById('error').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function classifyRice() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showError('Please select an image first');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    showResults(data);
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                showError('Error processing image');
+            });
+        }
+
+        function showResults(data) {
+            const alternativesHTML = data.top_predictions.slice(1).map(pred => 
+                `<div class="alt-item">
+                    <span>${pred.type}</span>
+                    <span>${pred.confidence.toFixed(1)}%</span>
+                </div>`
+            ).join('');
+
+            const resultsHTML = `
+                <div class="main-result">
+                    <h2>${data.rice_type}</h2>
+                    <div class="confidence">Confidence: ${data.confidence}%</div>
+                </div>
+                
+                <div class="alternatives">
+                    <h3>Alternative Predictions</h3>
+                    ${alternativesHTML}
+                </div>
+                
+                <div class="result-section">
+                    <h3>💧 Water Requirements</h3>
+                    <p>${data.water}</p>
+                </div>
+                <div class="result-section">
+                    <h3>🧪 Fertilizer Requirements</h3>
+                    <p>${data.fertilizer}</p>
+                </div>
+                <div class="result-section">
+                    <h3>🌡️ Climate Requirements</h3>
+                    <p>${data.climate}</p>
+                </div>
+            `;
+            
+            document.getElementById('results').innerHTML = resultsHTML;
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function showError(message) {
+            document.getElementById('error').textContent = message;
+            document.getElementById('error').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
